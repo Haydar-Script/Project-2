@@ -1,10 +1,12 @@
+import 'dart:convert' as convert;
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert' as convert;
+
 import 'show_players.dart';
 
-// domain of your server
-const String _baseURL = 'csci410haydar.000webhostapp.com';
+// domain of the server
+const String _baseURL = 'https://esterwebt.000webhostapp.com/';
 
 class AddPlayer extends StatefulWidget {
   const AddPlayer({super.key});
@@ -14,22 +16,12 @@ class AddPlayer extends StatefulWidget {
 }
 
 class _AddPlayerState extends State<AddPlayer> {
-  // creates a unique key to be used by the form
-  // this key is necessary for validation
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  TextEditingController _controllerID = TextEditingController();
-  TextEditingController _controllerName = TextEditingController();
-  TextEditingController _controllerBalance = TextEditingController();
-  // the below variable is used to display the progress bar when retrieving data
+  // text editing controllers
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _coinsController = TextEditingController();
+  final TextEditingController _rankController = TextEditingController();
+  final TextEditingController _hoursController = TextEditingController();
   bool _loading = false;
-
-  @override
-  void dispose() {
-    _controllerID.dispose();
-    _controllerName.dispose();
-    _controllerBalance.dispose();
-    super.dispose();
-  }
 
   void update(String text) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
@@ -44,125 +36,137 @@ class _AddPlayerState extends State<AddPlayer> {
         appBar: AppBar(
           title: const Text('Add Player'),
           centerTitle: true,
-          backgroundColor: Colors.red,
-          // the below line disables the back button on the AppBar
+          // disable back button on the AppBar
           automaticallyImplyLeading: false,
+          // make the app bar smaller
+          toolbarHeight: 30,
+          foregroundColor: Colors.deepPurple,
         ),
         body: Center(
             child: Form(
-          key:
-              _formKey, // key to uniquely identify the form when performing validation
           child: Column(
             children: <Widget>[
               const SizedBox(height: 10),
               SizedBox(
                   width: 200,
                   child: TextFormField(
-                    controller: _controllerID,
-                    keyboardType: TextInputType.number,
+                    controller: _nameController,
+                    keyboardType: TextInputType.name,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
-                      hintText: 'Enter ID',
+                      hintText: 'Player name...',
                     ),
-                    validator: (String? value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter player id';
-                      }
-                      return null;
-                    },
                   )),
               const SizedBox(height: 10),
               SizedBox(
                   width: 200,
                   child: TextFormField(
-                    controller: _controllerName,
+                    controller: _coinsController,
+                    keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
-                      hintText: 'Enter Player Name',
+                      hintText: 'Number of coins...',
                     ),
-                    validator: (String? value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter player name';
-                      }
-                      return null;
-                    },
                   )),
               const SizedBox(height: 10),
               SizedBox(
                   width: 200,
                   child: TextFormField(
-                    controller: _controllerBalance,
+                    controller: _rankController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
-                      hintText: 'Enter Balance',
+                      hintText: 'Player rank...',
                     ),
-                    validator: (String? value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter balance';
-                      }
-                      return null;
-                    },
                   )),
               const SizedBox(height: 10),
-              ElevatedButton(
-                // we need to prevent the user from sending another request, while current
-                // request is being processed
-                onPressed: _loading
-                    ? null
-                    : () {
-                        // disable button while loading
-                        if (_formKey.currentState!.validate()) {
-                          setState(() {
-                            _loading = true;
-                          });
-                          saveCustomer(
-                              update,
-                              int.parse(_controllerID.text),
-                              _controllerName.text,
-                              double.parse(_controllerBalance.text));
-                        }
-                      },
-                child: const Text('Add Player'),
+              SizedBox(
+                  width: 200,
+                  child: TextFormField(
+                    controller: _hoursController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: 'Hours played...',
+                    ),
+                  )),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    // prevent sending another request while current request is being processed
+                    onPressed: _loading
+                        ? null
+                        : () {
+                            // disable button while loading
+                            setState(() {
+                              _loading = true;
+                            });
+                            try {
+                              savePlayer(
+                                  update,
+                                  _nameController.text,
+                                  double.parse(_coinsController.text),
+                                  int.parse(_rankController.text),
+                                  int.parse(_hoursController.text));
+                            } catch (e) {
+                              update("Invalid data entered");
+                            }
+                          },
+                    child: const Icon(Icons.add),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context)
+                          .push(MaterialPageRoute(builder: (context) => const ShowPlayers()));
+                    },
+                    child: const Icon(Icons.group),
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => const ShowPlayers()));
-                },
-                child: const Text('Show Players'),
-              ),
-              const SizedBox(height: 10),
-              Visibility(
-                  visible: _loading, child: const CircularProgressIndicator())
+              Visibility(visible: _loading, child: const CircularProgressIndicator())
             ],
           ),
         )));
   }
 }
 
-void saveCustomer(
-    Function(String text) update, int cid, String name, double balance) async {
+void savePlayer(Function(String text) update, String playerName, double coins, int rank,
+    int hoursPlayed) async {
+  if (playerName.isEmpty) {
+    update("Name can't be empty");
+    return;
+  }
+  if (coins.isNegative || coins.isNaN) {
+    update("Number of coins must be a positive number");
+    return;
+  }
+  if (rank.isNaN || rank.isNegative) {
+    update("Rank must be a positive integer");
+    return;
+  }
+  if (hoursPlayed.isNaN || hoursPlayed.isNegative) {
+    update("Number of hours played must be a positive integer");
+    return;
+  }
+
   try {
-    // we need to first retrieve and decrypt the key
-    // send a JSON object using http post
     final response = await http
-        .post(Uri.parse('$_baseURL/saveCustomer.php'),
+        .post(Uri.parse('$_baseURL/addPlayer.php'),
             headers: <String, String>{
               'Content-Type': 'application/json; charset=UTF-8',
-            }, // convert the cid, name and key to a JSON object
+            },
             body: convert.jsonEncode(<String, String>{
-              'cid': '$cid',
-              'name': name,
-              'balance': '$balance',
-              'key': 'your_key'
+              'name': playerName,
+              'coins': '$coins',
+              'rank': '$rank',
+              'hoursPlayed': '$hoursPlayed'
             }))
-        .timeout(const Duration(seconds: 5));
-    if (response.statusCode == 200) {
-      // if successful, call the update function
-      update(response.body);
-    }
+        .timeout(const Duration(seconds: 30));
+    update(response.body);
   } catch (e) {
     update(e.toString());
   }
