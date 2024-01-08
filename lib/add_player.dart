@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'show_players.dart';
 
 // domain of the server
-const String _baseURL = 'https://esterwebt.000webhostapp.com/';
+const String _baseURL = 'csci410haydar.000webhostapp.com';
 
 class AddPlayer extends StatefulWidget {
   const AddPlayer({super.key});
