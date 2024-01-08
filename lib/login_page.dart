@@ -20,11 +20,13 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
 
   // go to AddPlayer page if log in is successful
-  void logIn(bool successful) {
+  void logIn(bool successful, {String message = ""}) {
     if (successful) {
-      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddPlayer()));
+      Navigator.of(context)
+          .push(MaterialPageRoute(builder: (context) => const AddPlayer()));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Log In failed")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Log In failed: $message")));
     }
   }
 
@@ -71,7 +73,8 @@ class _LoginPageState extends State<LoginPage> {
                           final response = await http
                               .post(Uri.parse('$_baseURL/login.php'),
                                   headers: <String, String>{
-                                    'Content-Type': 'application/json; charset=UTF-8',
+                                    'Content-Type':
+                                        'application/json; charset=UTF-8',
                                   }, // convert the cid, name and key to a JSON object
                                   body: convert.jsonEncode(<String, String>{
                                     'username': _usernameController.text,
@@ -81,10 +84,10 @@ class _LoginPageState extends State<LoginPage> {
                           if (response.statusCode == 200) {
                             logIn(true);
                           } else {
-                            logIn(false);
+                            logIn(false, message: "wrong password");
                           }
                         } catch (e) {
-                          logIn(false);
+                          logIn(false, message: e.toString());
                         }
                         setState(() {
                           _loading = false;
